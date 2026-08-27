@@ -1,0 +1,8 @@
+{
+  "slug": "proof-motion-canvas",
+  "title": "Proof Motion Canvas",
+  "artifact_class": "static-web",
+  "smallest_useful_product": "Static web editor for cards, arrows, numeric labels, and named timed intervals; playback has step controls and exports one self-contained HTML page.",
+  "monetization": "free",
+  "constraints": "Author-owned content, explanations rather than formal verification, accessible step text alongside motion."
+}
