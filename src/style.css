@@ -186,7 +186,8 @@ textarea { min-height: 86px; resize: vertical; line-height: 1.45; }
 .claim-time { display: block; margin-top: 4px; color: var(--muted); font-family: var(--utility); font-size: .75rem; font-variant-numeric: tabular-nums; }
 
 .empty-claims { margin: 18px 0; color: var(--muted); font-style: italic; }
-.local-note { margin: 18px 0 0; color: var(--muted); font-family: var(--utility); font-size: .78rem; }
+.local-note { margin: 14px 0 0; color: var(--muted); font-family: var(--utility); font-size: .78rem; }
+.local-note a { color: var(--accent-dark); }
 
 .stage-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
 .stage-head h2 { margin: 2px 0 0; font-size: 1.5rem; font-weight: 400; }
@@ -205,7 +206,7 @@ textarea { min-height: 86px; resize: vertical; line-height: 1.45; }
     linear-gradient(90deg, rgb(23 23 20 / 4%) 1px, transparent 1px);
   background-size: 32px 32px;
   box-shadow: 8px 8px 0 #d9d5c9;
-  touch-action: none;
+  touch-action: auto;
 }
 
 .canvas-shell::before, .canvas-shell::after {
@@ -237,6 +238,7 @@ textarea { min-height: 86px; resize: vertical; line-height: 1.45; }
   background: var(--sheet);
   box-shadow: 4px 4px 0 rgb(23 23 20 / 14%);
   user-select: none;
+  touch-action: none;
 }
 .canvas-node.card { width: 136px; min-height: 76px; padding: 12px; font-weight: 700; text-align: center; }
 .canvas-node.number { width: 68px; height: 68px; border-radius: 50%; font-family: var(--utility); font-size: 1.65rem; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -256,6 +258,7 @@ textarea { min-height: 86px; resize: vertical; line-height: 1.45; }
   padding: clamp(20px, 4vw, 48px);
   background: var(--sheet);
 }
+.canvas-empty[hidden] { display: none; }
 .canvas-empty img { display: block; width: 100%; height: auto; border: 1px solid var(--hairline); filter: saturate(.8) contrast(1.04); }
 .canvas-empty h3 { margin: 4px 0 10px; font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 400; line-height: 1.05; }
 .canvas-empty p { max-width: 40ch; margin: 0 0 16px; }

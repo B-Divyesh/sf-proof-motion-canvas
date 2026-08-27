@@ -1,8 +1,16 @@
 const CACHE = 'proof-motion-canvas-v1'
-const SHELL = ['/', '/assets/editorial-plate.webp', '/privacy/', '/terms/']
+const SHELL = ['/assets/editorial-plate.webp', '/favicon.svg', '/legal.css', '/privacy/', '/terms/']
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()))
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE)
+    const home = await fetch('/')
+    const markup = await home.clone().text()
+    await cache.put('/', home)
+    const builtAssets = [...markup.matchAll(/(?:src|href)="(\/assets\/[^"?]+)"/g)].map((match) => match[1])
+    await cache.addAll([...new Set([...SHELL, ...builtAssets])])
+    await self.skipWaiting()
+  })())
 })
 
 self.addEventListener('activate', (event) => {

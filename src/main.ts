@@ -53,6 +53,7 @@ app.innerHTML = `
         <ol class="claim-list" id="claim-list"></ol>
         <button class="button" id="add-step" type="button">＋ Add claim</button>
         <p class="local-note"><span aria-hidden="true">●</span> Private by default. Saved only in this browser.</p>
+        <p class="local-note">The welcome plate is AI-generated. <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
       </aside>
       <section class="stage-panel" aria-labelledby="stage-title">
         <div class="stage-head">
@@ -76,16 +77,16 @@ app.innerHTML = `
       </section>
       <aside class="inspector-panel" aria-labelledby="inspector-title"><div class="section-kicker">Details</div><h2 id="inspector-title">Inspector</h2><div class="inspector-content" id="inspector"></div></aside>
     </main>
-    <section class="proof-strip" aria-label="Replay controls">
+    <footer class="proof-strip" aria-label="Replay controls">
       <div class="play-controls">
         <button class="button icon-button" id="previous-step" type="button" aria-label="Previous claim">←</button>
-        <button class="button primary" id="play-button" type="button">▶ <span class="optional-label">Play proof</span></button>
+        <button class="button primary" id="play-button" type="button" aria-label="Play proof">▶ <span class="optional-label">Play proof</span></button>
         <button class="button icon-button" id="next-step" type="button" aria-label="Next claim">→</button>
         <input class="scrubber" id="scrubber" type="range" min="0" max="1" value="0" step="0.01" aria-label="Replay position">
         <output class="timecode" id="timecode">0.0 / 0.0 s</output>
       </div>
       <div class="timeline" id="timeline" aria-label="Named timing intervals"></div>
-    </section>
+    </footer>
   </div>
   <dialog class="dialog" id="arrow-dialog" aria-labelledby="arrow-title">
     <form class="dialog-form" id="arrow-form" method="dialog">
@@ -224,6 +225,7 @@ const stopPlayback = (): void => {
   playing = false
   cancelAnimationFrame(animationFrame)
   byId('play-button').innerHTML = '▶ <span class="optional-label">Play proof</span>'
+  byId('play-button').setAttribute('aria-label', 'Play proof')
 }
 
 const setTime = (time: number): void => {
@@ -249,6 +251,7 @@ const playTick = (now: number): void => {
   if (currentTime >= duration(proof)) {
     stopPlayback()
     byId('play-button').innerHTML = '↻ <span class="optional-label">Replay proof</span>'
+    byId('play-button').setAttribute('aria-label', 'Replay proof')
     return
   }
   animationFrame = requestAnimationFrame(playTick)
@@ -261,6 +264,7 @@ const togglePlayback = (): void => {
   playing = true
   playOrigin = performance.now() - currentTime * 1000
   byId('play-button').innerHTML = 'Ⅱ <span class="optional-label">Pause proof</span>'
+  byId('play-button').setAttribute('aria-label', 'Pause proof')
   animationFrame = requestAnimationFrame(playTick)
 }
 
