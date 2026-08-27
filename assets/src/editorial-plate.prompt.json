@@ -1,0 +1,9 @@
+{
+  "tool": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "date": "2026-08-27",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "Use case: scientific-educational. Asset type: welcome-state editorial plate for a web application. A true top-down overhead still life of exactly five completely blank rectangular index cards arranged as a logical sequence, connected by crisp black drafting arrows and one restrained vermilion-red timing arc. Warm recycled newsprint surface, charcoal letterpress ink, subtle pencil registration marks, cut-paper edges, tactile but minimal. Flat overcast studio light, crisp small paper shadows. Wide 3:2 composition with generous quiet margins. Monochrome typographic broadsheet art direction. No people, no hands, no readable text, no letters, no numbers, no equations, no logos, no watermark, no interface screenshot, no gradients, no glossy 3D, no brand marks.",
+  "review": "Approved: five blank cards, intentional arrows and registration marks, no stray text, logos, or watermarks."
+}
