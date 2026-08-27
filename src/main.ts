@@ -526,10 +526,21 @@ document.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'n') addNode('number')
 })
 
-const updateOnlineState = (): void => { byId<HTMLDivElement>('offline-banner').hidden = navigator.onLine }
-window.addEventListener('online', () => { updateOnlineState(); notify('Back online. Your local work is intact.') })
-window.addEventListener('offline', updateOnlineState)
-updateOnlineState()
+const updateOnlineState = async (): Promise<void> => {
+  let online = navigator.onLine
+  if (online) {
+    try {
+      const response = await fetch('/robots.txt', { method: 'HEAD', cache: 'no-store' })
+      online = response.ok
+    } catch {
+      online = false
+    }
+  }
+  byId<HTMLDivElement>('offline-banner').hidden = online
+}
+window.addEventListener('online', () => { void updateOnlineState(); notify('Back online. Your local work is intact.') })
+window.addEventListener('offline', () => { void updateOnlineState() })
+void updateOnlineState()
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('/sw.js').catch(() => undefined)
 renderAll()

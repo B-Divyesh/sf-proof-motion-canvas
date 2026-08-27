@@ -24,10 +24,10 @@ self.addEventListener('fetch', (event) => {
       const copy = response.clone()
       caches.open(CACHE).then((cache) => cache.put(event.request, copy))
       return response
-    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('/'))))
+    }).catch(() => caches.match(event.request, { ignoreVary: true }).then((cached) => cached || caches.match('/', { ignoreVary: true }))))
     return
   }
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+  event.respondWith(caches.match(event.request, { ignoreVary: true }).then((cached) => cached || fetch(event.request).then((response) => {
     if (new URL(event.request.url).origin === self.location.origin) {
       const copy = response.clone()
       caches.open(CACHE).then((cache) => cache.put(event.request, copy))
