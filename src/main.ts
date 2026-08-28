@@ -188,7 +188,7 @@ const renderInspector = (): void => {
       <div class="field"><label for="edit-step-text">Accessible explanation</label><textarea id="edit-step-text" data-step-field="text" maxlength="300">${escapeHtml(step.text)}</textarea></div>
       <div class="field"><label for="edit-step-target">What changes</label><select id="edit-step-target" data-step-field="targetId">${targets.map((target) => `<option value="${escapeHtml(target.id)}"${target.id === step.targetId ? ' selected' : ''}>${escapeHtml(target.name)}</option>`).join('')}</select></div>
       <div class="field-row"><div class="field"><label for="edit-step-start">Starts (seconds)</label><input id="edit-step-start" data-step-field="start" type="number" min="0" step="0.25" value="${step.start}"></div><div class="field"><label for="edit-step-end">Ends (seconds)</label><input id="edit-step-end" data-step-field="end" type="number" min="0.25" step="0.25" value="${step.end}"></div></div>
-      <p class="help">Duration: ${(step.end - step.start).toFixed(2)} s. Intervals may overlap when two claims need to remain active.</p><div class="inspector-actions"><button class="button danger" type="button" data-delete="step">Delete claim</button></div>`
+      <p class="help" id="step-duration">Duration: ${(step.end - step.start).toFixed(2)} s. Intervals may overlap when two claims need to remain active.</p><div class="inspector-actions"><button class="button danger" type="button" data-delete="step">Delete claim</button></div>`
     return
   }
   if (selectedType === 'node') {
@@ -390,6 +390,16 @@ byId('inspector').addEventListener('change', (event) => {
     if (input.dataset.stepField === 'end') step.end = Math.max(step.start + .25, Number(input.value) || step.start + .25)
     proof.steps = normalizeSteps(proof.steps)
     selectedId = step.id
+
+    // Keep this form in place so a native Tab can reach the next field, but
+    // reconcile timing controls with the normalized value we actually save.
+    // Re-rendering the inspector here would discard focus during keyboard edits.
+    const savedStep = proof.steps.find((item) => item.id === selectedId)
+    if (savedStep && (input.dataset.stepField === 'start' || input.dataset.stepField === 'end')) {
+      byId<HTMLInputElement>('edit-step-start').value = String(savedStep.start)
+      byId<HTMLInputElement>('edit-step-end').value = String(savedStep.end)
+      byId('step-duration').textContent = `Duration: ${(savedStep.end - savedStep.start).toFixed(2)} s. Intervals may overlap when two claims need to remain active.`
+    }
   }
   save(true)
   renderSequence()

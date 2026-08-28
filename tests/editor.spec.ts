@@ -80,6 +80,34 @@ test('keeps keyboard focus from a claim name through its accessible explanation 
   await expect(page.locator('#claimText')).toHaveText(accessibleText)
 })
 
+test('reconciles the inspectable duration and timing fields after valid and clamped timing edits', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('[data-select-step="s1"]').click()
+
+  const end = page.locator('#edit-step-end')
+  await end.fill('5')
+  await end.press('Tab')
+  await expect(end).toHaveValue('5')
+  await expect(page.locator('#step-duration')).toHaveText(/Duration: 5\.00 s\./)
+  await expect(page.locator('.timeline')).toContainText('1. Count both groups0.0–5.0 s')
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('proof-motion-canvas.document.v1') ?? '{}').steps[0]?.end)).toBe(5)
+
+  await page.locator('[data-select-step="s1"]').click()
+  await end.fill('0')
+  await end.press('Tab')
+  await expect(end).toHaveValue('0.25')
+  await expect(page.locator('#step-duration')).toHaveText(/Duration: 0\.25 s\./)
+  await expect(page.locator('.timeline')).toContainText('1. Count both groups0.0–0.3 s')
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('proof-motion-canvas.document.v1') ?? '{}').steps[0]?.end)).toBe(0.25)
+
+  const downloadEvent = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export replay' }).click()
+  const download = await downloadEvent
+  const savedPath = await download.path()
+  expect(savedPath).not.toBeNull()
+  expect(await readFile(savedPath as string, 'utf8')).toContain('"end":0.25')
+})
+
 test('rejects malformed imports before they can corrupt the local proof', async ({ page }) => {
   await page.goto('/')
   const fileInput = page.locator('#file-input')
