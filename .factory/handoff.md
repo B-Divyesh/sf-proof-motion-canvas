@@ -1,38 +1,27 @@
-# Proof Motion Canvas — handoff
+# Proof Motion Canvas — verification handoff
 
-## What shipped
+## Status: FAIL
 
-- A production Vite + vanilla TypeScript static editor for cards, numeric labels, attached arrows, and ordered written claims.
-- Each claim has an inspectable target plus explicit start and end seconds. Replay supports play/pause, scrub, previous/next, Space, and left/right arrow keys. Playback is derived from elapsed time, so pausing or seeking cannot corrupt scene state.
-- Canvas items support pointer dragging, keyboard movement, selection, editing, and confirmed deletion. The 390 px layout stacks intentionally and gives the fixed-size figure desk its own horizontal scroll region.
-- Local-first autosave, editable JSON import/export, a confirmed blank-document action, a worked five-step starter, validated import errors, and clear local/offline status.
-- One-file standalone HTML export with inline data, styling, replay controls, keyboard operation, and accessible claim text. The exported file was executed in the browser test, not only downloaded.
-- An offline service worker that discovers and precaches Vite's hashed shell assets, plus `/privacy/`, `/terms/`, robots, sitemap, and Azure Static Web Apps configuration.
-- The monochrome typographic broadsheet system documented in `.factory/design.md`. The original generated paper-card plate is 20,126 bytes as WebP; source and prompt provenance are in `assets/src/`.
+Candidate `65295c9503598b2b4ea96665b86a09100cc4e5be` was independently verified on 2026-08-28 against <https://proof-motion-canvas.sociobot.in/>. **Do not promote it.**
 
-## Run and verify
+The live root and hashed JS/CSS assets match the candidate byte-for-byte; the earlier deployment-only concern is therefore resolved. Install, `npm test` (4/4), exact `npm run build`, and the complete Playwright suite (13 passed, one intentional mobile-only skip) pass after installing the Playwright revision required by the lockfile. Normal editor, export/replay, desktop, 390px mobile, keyboard, reduced motion, axe serious/critical scans, privacy/network behavior, service-worker registration/update, and cached offline reload were exercised.
+
+Release is blocked by malformed JSON import handling:
+
+- **P1:** duplicate step IDs are accepted and saved. Selecting the second duplicate claim opens the first claim in the inspector, making it impossible to inspect/edit independently.
+- **P1:** finite but out-of-bounds imported coordinates (for example `x:-999, y:999`) are accepted and saved, placing canvas objects outside the usable canvas.
+- **P2:** live response headers lack a Content-Security-Policy, though HSTS, nosniff, referrer policy, permissions policy, caching, and absence of third-party requests all checked out.
+
+See [`.factory/verification.md`](verification.md) for exact reproductions, headers/hashes, budgets, the full test evidence, and required remediation.
+
+## Re-run
 
 ```sh
 npm ci
+npx playwright install chromium
 npm test
 npm run build
-npm run test:e2e
-npm run preview
+npm run test:e2e -- --reporter=list
 ```
 
-Deployment uses exactly `npm run build`; output is `dist/` and `dist/index.html` is present at its root.
-
-Final local verification on 2026-08-27:
-
-- `npm test`: 4/4 model tests passed.
-- `npm run build`: passed; initial JS 31.48 KB raw / 10.79 KB gzip, CSS 12.05 KB raw / 3.47 KB gzip, hero WebP 20.13 KB. No runtime fonts or third-party scripts.
-- `npm run test:e2e`: 13 passed and one intentional desktop skip for a mobile-only assertion. Desktop and 390 px Chromium flows cover editing, keyboard movement, blank-state creation, playback, HTML export + execution, offline reload, and legal routes. Axe integration reports no serious or critical violations.
-- Factory `verify-url.sh`: title present, `lang="en"`, one `h1`, main landmark, all images have alt text, no unlabeled buttons, and no console/page errors.
-- Lighthouse mobile: Performance 99, Accessibility 100, Best Practices 100, SEO 100; LCP 1.3 s, CLS 0, Total Blocking Time 140 ms. INP is not reported for a synthetic load; interactions are covered by Playwright.
-- Desktop and 390 × 844 screenshots were reviewed for clipping, hidden controls, and canvas state. Reduced-motion CSS replaces narrative transforms with instant state changes.
-
-## Known gaps and next steps
-
-- The stated five-pilot usability and 70% invariant-restatement success measure requires real participant sessions and has not yet been measured.
-- V1 intentionally has one local draft, no collaboration/backend, no formal verification, no arbitrary scripting, and no video export. JSON files are the portable editable format; HTML files are standalone replays.
-- A future iteration could add reorder handles and multiple local documents if pilot use shows that either is more valuable than the current compact workflow.
+After fixing import validation, repeat the two JSON import reproductions in the verification report and recheck live headers after adding CSP.
