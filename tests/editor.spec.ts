@@ -53,6 +53,33 @@ test('creates a proof from the empty state', async ({ page }) => {
   await expect(page.locator('#claim-list')).toContainText('Name the starting set')
 })
 
+test('keeps keyboard focus from a claim name through its accessible explanation and standalone export', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('[data-select-step="s1"]').click()
+
+  const title = page.locator('#edit-step-title')
+  const explanation = page.locator('#edit-step-text')
+  await title.fill('My invariant')
+  await title.press('Tab')
+  await expect(explanation).toBeFocused()
+
+  const accessibleText = 'Changing a card does not change the total count.'
+  await explanation.fill(accessibleText)
+  await explanation.press('Tab')
+  await expect(page.locator('#claim-list')).toContainText('My invariant')
+  await expect(page.locator('.canvas-node')).toHaveCount(4)
+
+  const downloadEvent = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export replay' }).click()
+  const download = await downloadEvent
+  const savedPath = await download.path()
+  expect(savedPath).not.toBeNull()
+  const exportedHtml = await readFile(savedPath as string, 'utf8')
+  await page.goto(`data:text/html;charset=utf-8,${encodeURIComponent(exportedHtml)}`)
+  await expect(page.locator('#claimTitle')).toHaveText('My invariant')
+  await expect(page.locator('#claimText')).toHaveText(accessibleText)
+})
+
 test('rejects malformed imports before they can corrupt the local proof', async ({ page }) => {
   await page.goto('/')
   const fileInput = page.locator('#file-input')

@@ -394,7 +394,6 @@ byId('inspector').addEventListener('change', (event) => {
   save(true)
   renderSequence()
   renderCanvas()
-  renderInspector()
   renderTimeline()
 })
 
@@ -518,7 +517,8 @@ fileInput.addEventListener('change', async () => {
 })
 
 document.addEventListener('keydown', (event) => {
-  if ((event.target as HTMLElement).matches('input, textarea, select, button')) return
+  const target = event.target
+  if (target instanceof Element && target.closest('input, textarea, select, button, [contenteditable="true"]')) return
   if (event.code === 'Space') { event.preventDefault(); togglePlayback() }
   if (event.key === 'ArrowLeft') jumpStep(-1)
   if (event.key === 'ArrowRight') jumpStep(1)
