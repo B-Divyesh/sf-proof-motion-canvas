@@ -53,6 +53,34 @@ test('creates a proof from the empty state', async ({ page }) => {
   await expect(page.locator('#claim-list')).toContainText('Name the starting set')
 })
 
+test('rejects malformed imports before they can corrupt the local proof', async ({ page }) => {
+  await page.goto('/')
+  const fileInput = page.locator('#file-input')
+  const duplicateStepIds = {
+    version: 1,
+    title: 'Duplicate id recovery',
+    invariant: 'x',
+    nodes: [{ id: 'n1', kind: 'card', label: 'A', x: 20, y: 30 }],
+    arrows: [],
+    steps: [
+      { id: 'same', title: 'First claim', text: 'first', targetId: 'n1', start: 0, end: 1 },
+      { id: 'same', title: 'Second claim', text: 'second', targetId: 'n1', start: 1, end: 2 },
+    ],
+  }
+  await fileInput.setInputFiles({ name: 'duplicate-ids.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(duplicateStepIds)) })
+  await expect(page.locator('#toast')).toContainText('same identity')
+  await expect(page.locator('#claim-list .claim-item')).toHaveCount(5)
+
+  const offCanvasNode = {
+    ...duplicateStepIds,
+    steps: duplicateStepIds.steps.slice(0, 1),
+    nodes: [{ id: 'n1', kind: 'card', label: 'A', x: -999, y: 999 }],
+  }
+  await fileInput.setInputFiles({ name: 'off-canvas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(offCanvasNode)) })
+  await expect(page.locator('#toast')).toContainText('must stay within')
+  await expect(page.locator('[data-select-node="left"]')).toBeVisible()
+})
+
 test('mobile layout contains horizontal canvas scrolling without overflowing the page', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'mobile-only assertion')
   await page.goto('/')

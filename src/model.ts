@@ -33,6 +33,13 @@ export interface ProofDocument {
   steps: ProofStep[]
 }
 
+export const CANVAS_BOUNDS = {
+  minX: 6,
+  maxX: 94,
+  minY: 10,
+  maxY: 90,
+} as const
+
 export const uid = (prefix: string): string => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 
 export const emptyDocument = (): ProofDocument => ({
@@ -84,22 +91,28 @@ export const validateDocument = (input: unknown): ProofDocument => {
   }
   const ids = new Set<string>()
   for (const node of doc.nodes) {
-    if (!node || typeof node.id !== 'string' || (node.kind !== 'card' && node.kind !== 'number') || typeof node.label !== 'string' || !Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+    if (!node || typeof node.id !== 'string' || !node.id.trim() || (node.kind !== 'card' && node.kind !== 'number') || typeof node.label !== 'string' || !Number.isFinite(node.x) || !Number.isFinite(node.y)) {
       throw new Error('A canvas item is incomplete.')
+    }
+    if (node.x < CANVAS_BOUNDS.minX || node.x > CANVAS_BOUNDS.maxX || node.y < CANVAS_BOUNDS.minY || node.y > CANVAS_BOUNDS.maxY) {
+      throw new Error(`A canvas item must stay within ${CANVAS_BOUNDS.minX}–${CANVAS_BOUNDS.maxX}% horizontally and ${CANVAS_BOUNDS.minY}–${CANVAS_BOUNDS.maxY}% vertically.`)
     }
     if (ids.has(node.id)) throw new Error('Two canvas items have the same identity.')
     ids.add(node.id)
   }
   for (const arrow of doc.arrows) {
-    if (!arrow || typeof arrow.id !== 'string' || !ids.has(arrow.from) || !ids.has(arrow.to) || typeof arrow.label !== 'string') {
+    if (!arrow || typeof arrow.id !== 'string' || !arrow.id.trim() || !ids.has(arrow.from) || !ids.has(arrow.to) || typeof arrow.label !== 'string') {
       throw new Error('An arrow refers to a missing canvas item.')
     }
+    if (ids.has(arrow.id)) throw new Error('Two proof items have the same identity.')
     ids.add(arrow.id)
   }
   for (const step of doc.steps) {
-    if (!step || typeof step.id !== 'string' || typeof step.title !== 'string' || typeof step.text !== 'string' || typeof step.targetId !== 'string' || !ids.has(step.targetId) || !Number.isFinite(step.start) || !Number.isFinite(step.end) || step.start < 0 || step.end <= step.start) {
+    if (!step || typeof step.id !== 'string' || !step.id.trim() || typeof step.title !== 'string' || typeof step.text !== 'string' || typeof step.targetId !== 'string' || !ids.has(step.targetId) || !Number.isFinite(step.start) || !Number.isFinite(step.end) || step.start < 0 || step.end <= step.start) {
       throw new Error('A step has invalid text, timing, or target.')
     }
+    if (ids.has(step.id)) throw new Error('Two proof items have the same identity.')
+    ids.add(step.id)
   }
   return structuredClone(doc as ProofDocument)
 }

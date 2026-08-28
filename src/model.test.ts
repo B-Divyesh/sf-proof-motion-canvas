@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { duration, emptyDocument, normalizeSteps, sampleDocument, stepAtTime, validateDocument } from './model'
+import { CANVAS_BOUNDS, duration, emptyDocument, normalizeSteps, sampleDocument, stepAtTime, validateDocument } from './model'
 
 describe('proof model', () => {
   it('resolves deterministic playback positions', () => {
@@ -14,6 +14,30 @@ describe('proof model', () => {
     const doc = sampleDocument()
     doc.arrows[0].to = 'missing'
     expect(() => validateDocument(doc)).toThrow(/arrow/i)
+  })
+
+  it('rejects duplicate identities across nodes, arrows, and claims', () => {
+    const duplicateStep = sampleDocument()
+    duplicateStep.steps[1].id = duplicateStep.steps[0].id
+    expect(() => validateDocument(duplicateStep)).toThrow(/same identity/i)
+
+    const arrowCollidesWithNode = sampleDocument()
+    arrowCollidesWithNode.arrows[0].id = arrowCollidesWithNode.nodes[0].id
+    expect(() => validateDocument(arrowCollidesWithNode)).toThrow(/same identity/i)
+
+    const stepCollidesWithArrow = sampleDocument()
+    stepCollidesWithArrow.steps[0].id = stepCollidesWithArrow.arrows[0].id
+    expect(() => validateDocument(stepCollidesWithArrow)).toThrow(/same identity/i)
+  })
+
+  it('rejects imported canvas coordinates outside the editable bounds', () => {
+    const tooFarLeft = sampleDocument()
+    tooFarLeft.nodes[0].x = CANVAS_BOUNDS.minX - 1
+    expect(() => validateDocument(tooFarLeft)).toThrow(/within/i)
+
+    const tooLow = sampleDocument()
+    tooLow.nodes[0].y = CANVAS_BOUNDS.maxY + 1
+    expect(() => validateDocument(tooLow)).toThrow(/within/i)
   })
 
   it('accepts an empty proof and returns a clone', () => {

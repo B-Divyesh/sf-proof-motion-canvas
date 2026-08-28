@@ -1,5 +1,5 @@
 import './style.css'
-import { duration, emptyDocument, normalizeSteps, sampleDocument, stepAtTime, uid, validateDocument, type ProofDocument } from './model'
+import { CANVAS_BOUNDS, duration, emptyDocument, normalizeSteps, sampleDocument, stepAtTime, uid, validateDocument, type ProofDocument } from './model'
 import { standaloneHtml } from './export'
 
 const STORAGE_KEY = 'proof-motion-canvas.document.v1'
@@ -194,7 +194,7 @@ const renderInspector = (): void => {
   if (selectedType === 'node') {
     const node = proof.nodes.find((item) => item.id === selectedId)
     if (!node) { selectedType = null; renderInspector(); return }
-    inspector.innerHTML = `<p><span class="target-chip">${node.kind}</span></p><div class="field"><label for="edit-node-label">${node.kind === 'number' ? 'Numeric label' : 'Card text'}</label><input id="edit-node-label" data-node-field="label" type="text" maxlength="60" value="${escapeHtml(node.label)}"></div><div class="field-row"><div class="field"><label for="edit-node-x">Horizontal %</label><input id="edit-node-x" data-node-field="x" type="number" min="6" max="94" step="1" value="${node.x.toFixed(0)}"></div><div class="field"><label for="edit-node-y">Vertical %</label><input id="edit-node-y" data-node-field="y" type="number" min="10" max="90" step="1" value="${node.y.toFixed(0)}"></div></div><p class="help">Drag on the canvas, or focus the item and press arrow keys. Hold Shift for larger moves.</p><div class="inspector-actions"><button class="button danger" type="button" data-delete="node">Delete ${node.kind}</button></div>`
+    inspector.innerHTML = `<p><span class="target-chip">${node.kind}</span></p><div class="field"><label for="edit-node-label">${node.kind === 'number' ? 'Numeric label' : 'Card text'}</label><input id="edit-node-label" data-node-field="label" type="text" maxlength="60" value="${escapeHtml(node.label)}"></div><div class="field-row"><div class="field"><label for="edit-node-x">Horizontal %</label><input id="edit-node-x" data-node-field="x" type="number" min="${CANVAS_BOUNDS.minX}" max="${CANVAS_BOUNDS.maxX}" step="1" value="${node.x.toFixed(0)}"></div><div class="field"><label for="edit-node-y">Vertical %</label><input id="edit-node-y" data-node-field="y" type="number" min="${CANVAS_BOUNDS.minY}" max="${CANVAS_BOUNDS.maxY}" step="1" value="${node.y.toFixed(0)}"></div></div><p class="help">Drag on the canvas, or focus the item and press arrow keys. Hold Shift for larger moves.</p><div class="inspector-actions"><button class="button danger" type="button" data-delete="node">Delete ${node.kind}</button></div>`
     return
   }
   const arrow = proof.arrows.find((item) => item.id === selectedId)
@@ -373,8 +373,8 @@ byId('inspector').addEventListener('change', (event) => {
     const node = proof.nodes.find((item) => item.id === selectedId)
     if (!node) return
     if (input.dataset.nodeField === 'label') node.label = input.value.trim() || (node.kind === 'number' ? '0' : 'Untitled card')
-    if (input.dataset.nodeField === 'x') node.x = Math.max(6, Math.min(94, Number(input.value) || 6))
-    if (input.dataset.nodeField === 'y') node.y = Math.max(10, Math.min(90, Number(input.value) || 10))
+    if (input.dataset.nodeField === 'x') node.x = Math.max(CANVAS_BOUNDS.minX, Math.min(CANVAS_BOUNDS.maxX, Number(input.value) || CANVAS_BOUNDS.minX))
+    if (input.dataset.nodeField === 'y') node.y = Math.max(CANVAS_BOUNDS.minY, Math.min(CANVAS_BOUNDS.maxY, Number(input.value) || CANVAS_BOUNDS.minY))
   }
   if (selectedType === 'arrow' && input.dataset.arrowField === 'label') {
     const arrow = proof.arrows.find((item) => item.id === selectedId)
@@ -434,8 +434,8 @@ canvas.addEventListener('pointermove', (event) => {
   const node = proof.nodes.find((item) => item.id === dragging?.id)
   if (!node) return
   const rect = canvas.getBoundingClientRect()
-  node.x = Math.max(6, Math.min(94, ((event.clientX - rect.left) / rect.width) * 100))
-  node.y = Math.max(10, Math.min(90, ((event.clientY - rect.top) / rect.height) * 100))
+  node.x = Math.max(CANVAS_BOUNDS.minX, Math.min(CANVAS_BOUNDS.maxX, ((event.clientX - rect.left) / rect.width) * 100))
+  node.y = Math.max(CANVAS_BOUNDS.minY, Math.min(CANVAS_BOUNDS.maxY, ((event.clientY - rect.top) / rect.height) * 100))
   renderCanvas()
 })
 canvas.addEventListener('pointerup', (event) => {
@@ -453,10 +453,10 @@ canvas.addEventListener('keydown', (event) => {
   const node = proof.nodes.find((item) => item.id === id)
   if (!node) return
   const amount = event.shiftKey ? 5 : 1
-  if (event.key === 'ArrowLeft') node.x = Math.max(6, node.x - amount)
-  else if (event.key === 'ArrowRight') node.x = Math.min(94, node.x + amount)
-  else if (event.key === 'ArrowUp') node.y = Math.max(10, node.y - amount)
-  else if (event.key === 'ArrowDown') node.y = Math.min(90, node.y + amount)
+  if (event.key === 'ArrowLeft') node.x = Math.max(CANVAS_BOUNDS.minX, node.x - amount)
+  else if (event.key === 'ArrowRight') node.x = Math.min(CANVAS_BOUNDS.maxX, node.x + amount)
+  else if (event.key === 'ArrowUp') node.y = Math.max(CANVAS_BOUNDS.minY, node.y - amount)
+  else if (event.key === 'ArrowDown') node.y = Math.min(CANVAS_BOUNDS.maxY, node.y + amount)
   else return
   event.preventDefault()
   save()
