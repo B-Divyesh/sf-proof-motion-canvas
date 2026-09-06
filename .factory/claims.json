@@ -42,6 +42,13 @@
     "sandbox": "Focus a demo card, move it with an arrow key, then focus the canvas and start and pause playback with Space."
   },
   {
+    "id": "canvas-authoring",
+    "claim": "Authors can add and arrange cards, number labels, and connected arrows.",
+    "where": "Home how-it-works section, editor controls, README",
+    "test": "npm run test:e2e -- --grep @claim:canvas-authoring",
+    "sandbox": "In /demo add a card, number, and labeled arrow, drag an endpoint, and verify its attached arrow moves with it."
+  },
+  {
     "id": "reduced-motion",
     "claim": "The editor respects reduced-motion preferences.",
     "where": "README",
