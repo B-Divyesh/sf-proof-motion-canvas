@@ -206,3 +206,12 @@ test('keeps every visible legal-page link at least 44 pixels high', async ({ pag
     expect(undersized, `${path} has undersized links`).toEqual([])
   }
 })
+
+test('keeps first-screen content usable at 200 percent text size', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'text resizing check uses the phone project')
+  await page.goto('/')
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%' })
+  await expect(page.locator('h1')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible()
+  expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth))
+})

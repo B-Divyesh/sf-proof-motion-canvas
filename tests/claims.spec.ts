@@ -58,6 +58,12 @@ test('@claim:offline-reload reloads the sample after a first visit', async ({ br
   const page = await context.newPage()
   await page.goto('/demo')
   await page.waitForFunction(() => navigator.serviceWorker?.controller !== null)
+  const worker = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready
+    await registration.update()
+    return { active: registration.active?.state, waiting: Boolean(registration.waiting) }
+  })
+  expect(worker).toEqual({ active: 'activated', waiting: false })
   await context.setOffline(true)
   await page.reload()
   await expect(page.locator('h1')).toHaveText('Inspect a sample animated explanation')
