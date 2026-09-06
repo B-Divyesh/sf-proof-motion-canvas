@@ -56,10 +56,10 @@ export const sampleDocument = (): ProofDocument => ({
   title: 'Why the sum stays constant',
   invariant: 'Moving one counter changes its group, never the total.',
   nodes: [
-    { id: 'left', kind: 'card', label: 'Left group', x: 18, y: 45 },
-    { id: 'n-left', kind: 'number', label: '3', x: 31, y: 45 },
-    { id: 'right', kind: 'card', label: 'Right group', x: 63, y: 45 },
-    { id: 'n-right', kind: 'number', label: '5', x: 76, y: 45 },
+    { id: 'left', kind: 'card', label: 'Left group', x: 16, y: 45 },
+    { id: 'n-left', kind: 'number', label: '3', x: 34, y: 45 },
+    { id: 'right', kind: 'card', label: 'Right group', x: 62, y: 45 },
+    { id: 'n-right', kind: 'number', label: '5', x: 80, y: 45 },
   ],
   arrows: [{ id: 'move', from: 'left', to: 'right', label: 'move one' }],
   steps: [

@@ -1,5 +1,5 @@
-const CACHE = 'proof-motion-canvas-v1'
-const SHELL = ['/assets/editorial-plate.webp', '/favicon.svg', '/legal.css', '/privacy/', '/terms/']
+const CACHE = 'proof-motion-canvas-v2'
+const SHELL = ['/', '/demo', '/assets/editorial-plate.webp', '/assets/social-preview.png', '/apple-touch-icon.png', '/favicon.svg', '/legal.css', '/privacy/', '/terms/', '/404.html']
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -8,7 +8,7 @@ self.addEventListener('install', (event) => {
     const markup = await home.clone().text()
     await cache.put('/', home)
     const builtAssets = [...markup.matchAll(/(?:src|href)="(\/assets\/[^"?]+)"/g)].map((match) => match[1])
-    await cache.addAll([...new Set([...SHELL, ...builtAssets])])
+    await cache.addAll([...new Set([...SHELL.filter((path) => path !== '/'), ...builtAssets])])
     await self.skipWaiting()
   })())
 })

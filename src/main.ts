@@ -2,19 +2,50 @@ import './style.css'
 import { CANVAS_BOUNDS, duration, emptyDocument, normalizeSteps, sampleDocument, stepAtTime, uid, validateDocument, type ProofDocument } from './model'
 import { standaloneHtml } from './export'
 
-const STORAGE_KEY = 'proof-motion-canvas.document.v1'
+const REAL_STORAGE_KEY = 'proof-motion-canvas.document.v1'
+const DEMO_MARKER_KEY = 'demo:proof-motion-canvas.active'
+const ROUTE_FOCUS_KEY = 'proof-motion-canvas.route-focus'
+const PRODUCT_ORIGIN = 'https://proof-motion-canvas.sociobot.in'
+const isDemo = location.pathname === '/demo' || location.pathname === '/demo/' || new URLSearchParams(location.search).get('demo') === '1'
 
 const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)
 const byId = <T extends Element>(id: string): T => document.getElementById(id) as unknown as T
 const fileName = (title: string, extension: string): string => `${title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'proof'}.${extension}`
 
 const loadDocument = (): ProofDocument => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? validateDocument(JSON.parse(stored)) : sampleDocument()
-  } catch {
+  if (isDemo) {
+    sessionStorage.setItem(DEMO_MARKER_KEY, 'sample')
     return sampleDocument()
   }
+  try {
+    const stored = localStorage.getItem(REAL_STORAGE_KEY)
+    return stored ? validateDocument(JSON.parse(stored)) : emptyDocument()
+  } catch {
+    return emptyDocument()
+  }
+}
+
+const routeTo = (path: '/' | '/demo'): void => {
+  if (isDemo && path === '/') sessionStorage.removeItem(DEMO_MARKER_KEY)
+  sessionStorage.setItem(ROUTE_FOCUS_KEY, 'true')
+  history.pushState({ path }, '', path)
+  location.reload()
+}
+
+const updateRouteMetadata = (): void => {
+  const title = isDemo ? 'Demo — Proof Motion Canvas' : 'Proof Motion Canvas — build animated explanations'
+  const description = isDemo
+    ? 'Edit and replay a five-step sample without changing your saved draft.'
+    : 'Build an inspectable animated explanation with cards, named claims, visible timing, and a self-contained replay.'
+  const canonical = `${PRODUCT_ORIGIN}${isDemo ? '/demo' : '/'}`
+  document.title = title
+  document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', description)
+  document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', title)
+  document.querySelector<HTMLMetaElement>('meta[property="og:description"]')?.setAttribute('content', description)
+  document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', canonical)
+  document.querySelector<HTMLMetaElement>('meta[name="twitter:title"]')?.setAttribute('content', title)
+  document.querySelector<HTMLMetaElement>('meta[name="twitter:description"]')?.setAttribute('content', description)
+  document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', canonical)
 }
 
 let proof = loadDocument()
@@ -28,36 +59,59 @@ let toastTimer = 0
 
 const app = byId<HTMLDivElement>('app')
 app.innerHTML = `
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="wordmark" href="/" data-app-route><span class="wordmark-mark" aria-hidden="true">P</span><span>Proof Motion Canvas</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/" data-app-route${!isDemo ? ' aria-current="page"' : ''}>Home</a>
+        <a href="/demo" data-app-route${isDemo ? ' aria-current="page"' : ''}>Demo</a>
+        <a href="/privacy/">Privacy</a>
+      </nav>
+    </header>
+    <div class="route-announcer visually-hidden" aria-live="polite">${isDemo ? 'Demo page loaded' : 'Home page loaded'}</div>
+    ${isDemo ? `<div class="demo-banner" role="status"><strong>Demo — sample data, nothing is saved</strong><span>Your real draft stays separate.</span><div><button class="button" id="reset-demo" type="button">Reset demo</button><button class="button primary" id="start-real" type="button">Start for real</button></div></div>` : ''}
+    <main id="main">
+      <section class="hero${isDemo ? ' demo-hero' : ''}" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="section-kicker">${isDemo ? 'Five-step sample' : 'Local visual explanation editor'}</p>
+          <h1 id="page-title" tabindex="-1">${isDemo ? 'Inspect a sample animated explanation' : 'Build an inspectable animated explanation'}</h1>
+          <p class="hero-audience">${isDemo ? 'Change the sample, replay each claim, and export it without changing your saved draft.' : 'For teachers, explainers, and programmers who need each claim, visual change, and timing step to stay clear.'}</p>
+          ${isDemo ? '<a class="text-link" href="#editor">Open the sample editor</a>' : '<div class="hero-action"><a class="button primary large" href="/demo" data-app-route>Try it with sample data</a><span>Loads a separate five-step example.</span></div><ul class="plain-facts" aria-label="Product facts"><li>Free to use.</li><li>Drafts stay in this browser.</li><li>Works offline after the first visit.</li></ul>'}
+        </div>
+        ${isDemo ? '' : '<figure class="hero-plate"><img src="/assets/editorial-plate.webp" width="768" height="512" alt="Five blank cards connected by arrows show the structure of a timed argument"><figcaption>Cards, links, and timing remain visible while you explain.</figcaption></figure>'}
+      </section>
+      <section class="product-section" id="editor" aria-labelledby="editor-title">
+        <div class="section-intro"><p class="section-kicker">${isDemo ? 'Sample editor' : 'Your editor'}</p><h2 id="editor-title">${isDemo ? 'Edit the sample explanation' : 'Create your explanation'}</h2><p>${isDemo ? 'The sample starts with five named claims and eleven seconds of visible timing.' : 'Start with a card, then add the written claim and timing that explain it.'}</p></div>
   <div class="app-shell">
-    <header class="masthead">
-      <div class="brand-lockup">
-        <span class="brand-kicker">Param Factory · instrument 01</span>
-        <h1>Proof Motion Canvas</h1>
+    <div class="masthead" aria-label="Document controls">
+      <div class="editor-label">
+        <span class="brand-kicker">Current explanation</span>
+        <strong>${isDemo ? 'Sample workspace' : 'Saved on this device'}</strong>
       </div>
       <div class="document-heading">
         <label for="document-title">Argument title</label>
         <input class="title-input" id="document-title" type="text" maxlength="80" autocomplete="off">
       </div>
       <nav class="top-actions" aria-label="Document actions">
-        <button class="button" id="new-button" type="button">New</button>
-        <button class="button" id="import-button" type="button">Import</button>
-        <button class="button" id="json-button" type="button">Save JSON</button>
+        <button class="button" id="new-button" type="button">New draft</button>
+        <button class="button" id="import-button" type="button">Import JSON</button>
+        <button class="button" id="json-button" type="button">Download JSON</button>
         <button class="button primary" id="export-button" type="button">Export replay</button>
       </nav>
-    </header>
+    </div>
     <div class="offline-banner" id="offline-banner" role="status" hidden><span aria-hidden="true">◌</span> Offline — editing and export still work on this device.</div>
-    <main class="workspace" id="main">
+    <div class="workspace">
       <aside class="claims-panel" aria-labelledby="claims-title">
-        <div class="panel-head"><div><div class="section-kicker">Argument</div><h2 id="claims-title">Claim sequence</h2></div><span class="folio" id="claim-count">0 steps</span></div>
+        <div class="panel-head"><div><div class="section-kicker">Argument</div><h3 id="claims-title">Claim sequence</h3></div><span class="folio" id="claim-count">0 steps</span></div>
         <div class="invariant-wrap"><label for="invariant">Main invariant</label><textarea id="invariant" maxlength="240" placeholder="What remains true throughout?"></textarea></div>
         <ol class="claim-list" id="claim-list"></ol>
         <button class="button" id="add-step" type="button">＋ Add claim</button>
-        <p class="local-note"><span aria-hidden="true">●</span> Private by default. Saved only in this browser.</p>
-        <p class="local-note">The welcome plate is AI-generated. <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+        <p class="local-note"><span aria-hidden="true">●</span> ${isDemo ? 'Demo changes stay out of your real draft.' : 'Saved only in this browser.'}</p>
       </aside>
       <section class="stage-panel" aria-labelledby="stage-title">
         <div class="stage-head">
-          <div><div class="section-kicker">Figure desk</div><h2 id="stage-title">Argument canvas</h2></div>
+          <div><div class="section-kicker">Visual editor</div><h3 id="stage-title">Argument canvas</h3></div>
           <div class="tool-row" role="toolbar" aria-label="Add canvas items">
             <span class="tool-label">Add</span>
             <button class="button" data-add="card" type="button">▭ Card</button>
@@ -70,14 +124,15 @@ app.innerHTML = `
           <div id="nodes"></div>
           <div class="canvas-empty" id="canvas-empty" hidden>
             <img src="/assets/editorial-plate.webp" width="768" height="512" alt="Five blank paper cards linked by drafting arrows on warm newsprint">
-            <div><div class="eyebrow">A proof you can pause</div><h3>Make every claim inspectable.</h3><p>Add a card or begin with the worked five-step example. Then name what changes—and when.</p><div class="empty-actions"><button class="button accent" data-add="card" type="button">Add first card</button><button class="button" id="load-sample" type="button">Load example</button></div></div>
+            <div><div class="eyebrow">Empty canvas</div><h4>Your canvas has no items</h4><p>Add a card for the first idea, or open the separate sample.</p><div class="empty-actions"><button class="button accent" data-add="card" type="button">Add first card</button><button class="button" id="load-sample" type="button">Try sample instead</button></div></div>
           </div>
         </div>
-        <div class="canvas-caption"><span id="canvas-status"><strong>Edit mode.</strong> Drag an item or use arrow keys.</span><span>Explanation ≠ formal verification</span></div>
+        <div class="canvas-caption"><span id="canvas-status"><strong>Edit mode.</strong> Drag an item or use arrow keys.</span><span>This tool explains; it does not verify.</span></div>
+        <section class="current-claim" aria-labelledby="current-claim-title" aria-live="polite"><p class="section-kicker" id="current-claim-label">Current claim</p><h4 id="current-claim-title">No claim selected</h4><p id="current-claim-text">Add a written claim to explain what changes on the canvas.</p></section>
       </section>
-      <aside class="inspector-panel" aria-labelledby="inspector-title"><div class="section-kicker">Details</div><h2 id="inspector-title">Inspector</h2><div class="inspector-content" id="inspector"></div></aside>
-    </main>
-    <footer class="proof-strip" aria-label="Replay controls">
+      <aside class="inspector-panel" aria-labelledby="inspector-title"><div class="section-kicker">Details</div><h3 id="inspector-title">Edit selected item</h3><div class="inspector-content" id="inspector"></div></aside>
+    </div>
+    <div class="proof-strip" aria-label="Replay controls">
       <div class="play-controls">
         <button class="button icon-button" id="previous-step" type="button" aria-label="Previous claim">←</button>
         <button class="button primary" id="play-button" type="button" aria-label="Play proof">▶ <span class="optional-label">Play proof</span></button>
@@ -86,7 +141,12 @@ app.innerHTML = `
         <output class="timecode" id="timecode">0.0 / 0.0 s</output>
       </div>
       <div class="timeline" id="timeline" aria-label="Named timing intervals"></div>
-    </footer>
+    </div>
+  </div>
+      </section>
+      ${isDemo ? '' : `<section class="how-section" id="how" aria-labelledby="how-title"><div><p class="section-kicker">Three steps</p><h2 id="how-title">How it works</h2></div><ol><li><strong>Arrange the argument.</strong><span>Add cards, number labels, and arrows.</span></li><li><strong>Name each claim.</strong><span>Write the explanation and set its start and end.</span></li><li><strong>Replay and export.</strong><span>Check every step, then download one HTML file.</span></li></ol></section><section class="limits-section" aria-labelledby="limits-title"><p class="section-kicker">Scope and privacy</p><h2 id="limits-title">What this tool does not do</h2><p>It does not prove that an argument is correct. It does not replace a video editor or support shared editing.</p><p>Your draft stays in this browser. Only files you download leave the editor.</p></section>`}
+    </main>
+    <footer class="site-footer"><p><strong>Proof Motion Canvas</strong> builds inspectable animated explanations.</p><nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav><p>Built by Param Factory · Version 1.1.0</p><p class="asset-note">The paper-card artwork was generated for this product.</p></footer>
   </div>
   <dialog class="dialog" id="arrow-dialog" aria-labelledby="arrow-title">
     <form class="dialog-form" id="arrow-form" method="dialog">
@@ -118,10 +178,15 @@ const notify = (message: string, isError = false): void => {
 
 const save = (announce = false): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(proof))
+    if (isDemo) {
+      sessionStorage.setItem(DEMO_MARKER_KEY, 'changed')
+      if (announce) notify('Demo change applied. Your real draft is unchanged.')
+      return
+    }
+    localStorage.setItem(REAL_STORAGE_KEY, JSON.stringify(proof))
     if (announce) notify('Saved on this device.')
   } catch {
-    notify('This browser could not save locally. Export JSON to keep a copy.', true)
+    notify(isDemo ? 'The demo change could not be applied. Reset the demo and try again.' : 'This browser could not save locally. Download JSON to keep a copy.', true)
   }
 }
 
@@ -172,6 +237,9 @@ const renderCanvas = (): void => {
   byId<HTMLDivElement>('canvas-empty').hidden = proof.nodes.length > 0
   const currentLabel = current ? `<strong>Claim ${stepAtTime(proof, currentTime) + 1}:</strong> ${escapeHtml(current.title)}` : '<strong>Edit mode.</strong> Drag an item or use arrow keys.'
   byId('canvas-status').innerHTML = currentLabel
+  byId('current-claim-label').textContent = current ? `Claim ${stepAtTime(proof, currentTime) + 1} of ${proof.steps.length}` : 'Current claim'
+  byId('current-claim-title').textContent = current?.title ?? 'No claim selected'
+  byId('current-claim-text').textContent = current?.text ?? 'Add a written claim to explain what changes on the canvas.'
 }
 
 const renderInspector = (): void => {
@@ -334,8 +402,8 @@ document.addEventListener('click', (event) => {
 
 titleInput.addEventListener('input', () => { proof.title = titleInput.value; save() })
 invariantInput.addEventListener('input', () => { proof.invariant = invariantInput.value; save() })
-titleInput.addEventListener('change', () => notify('Saved on this device.'))
-invariantInput.addEventListener('change', () => notify('Saved on this device.'))
+titleInput.addEventListener('change', () => notify(isDemo ? 'Demo change applied. Your real draft is unchanged.' : 'Saved on this device.'))
+invariantInput.addEventListener('change', () => notify(isDemo ? 'Demo change applied. Your real draft is unchanged.' : 'Saved on this device.'))
 
 byId('add-step').addEventListener('click', addStep)
 byId('play-button').addEventListener('click', togglePlayback)
@@ -475,12 +543,14 @@ canvas.addEventListener('keydown', (event) => {
 })
 
 byId('load-sample').addEventListener('click', () => {
+  if (!isDemo) { routeTo('/demo'); return }
   proof = sampleDocument()
   selectedType = null
+  selectedId = ''
   currentTime = 0
-  save()
+  sessionStorage.setItem(DEMO_MARKER_KEY, 'sample')
   renderAll()
-  notify('Five-step example loaded.')
+  notify('Demo reset to the five-step sample.')
 })
 
 byId('new-button').addEventListener('click', () => {
@@ -492,7 +562,7 @@ byId('new-button').addEventListener('click', () => {
   currentTime = 0
   save()
   renderAll()
-  notify('Blank argument ready. Your previous local draft was replaced.')
+  notify(isDemo ? 'Blank demo ready. Your real draft is unchanged.' : 'Blank argument ready. Your previous local draft was replaced.')
 })
 
 byId('json-button').addEventListener('click', () => {
@@ -536,6 +606,37 @@ document.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'n') addNode('number')
 })
 
+document.addEventListener('click', (event) => {
+  const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-app-route]')
+  if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  const targetPath = new URL(link.href).pathname === '/demo' ? '/demo' : '/'
+  event.preventDefault()
+  if ((isDemo && targetPath === '/demo') || (!isDemo && targetPath === '/')) {
+    scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+    return
+  }
+  routeTo(targetPath)
+})
+
+window.addEventListener('popstate', () => {
+  sessionStorage.setItem(ROUTE_FOCUS_KEY, 'true')
+  location.reload()
+})
+
+if (isDemo) {
+  byId('reset-demo').addEventListener('click', () => {
+    stopPlayback()
+    proof = sampleDocument()
+    selectedType = null
+    selectedId = ''
+    currentTime = 0
+    sessionStorage.setItem(DEMO_MARKER_KEY, 'sample')
+    renderAll()
+    notify('Demo reset to the five-step sample.')
+  })
+  byId('start-real').addEventListener('click', () => routeTo('/'))
+}
+
 const updateOnlineState = async (): Promise<void> => {
   let online = navigator.onLine
   if (online) {
@@ -553,4 +654,10 @@ window.addEventListener('offline', () => { void updateOnlineState() })
 void updateOnlineState()
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('/sw.js').catch(() => undefined)
+updateRouteMetadata()
 renderAll()
+
+if (sessionStorage.getItem(ROUTE_FOCUS_KEY) === 'true') {
+  sessionStorage.removeItem(ROUTE_FOCUS_KEY)
+  requestAnimationFrame(() => byId<HTMLElement>('page-title').focus())
+}
