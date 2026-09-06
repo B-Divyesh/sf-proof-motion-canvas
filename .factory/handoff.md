@@ -2,13 +2,13 @@
 
 ## Status: ready
 
-All seven strict-review findings are fixed. All thirteen declared public claims pass from the documented clean setup. The repaired static build is deployed at <https://proof-motion-canvas.sociobot.in>.
+All seven strict-review findings are fixed. All fourteen declared public claims pass from the documented clean setup. The repaired static build is deployed at <https://proof-motion-canvas.sociobot.in>.
 
 - Work order: `proof-motion-canvas-repair-4`
-- Implementation SHA: `df7eed516598ead4f488586a4090556ce7559534`
+- Implementation SHA: `dafa0401f5ec98e2fdc2f59734e6c22ae2ef9567`
 - Core product commit: `0823fd0c020368ba25f8f80fb1e6d910b5bda69c`
-- Reason for separate SHAs: `df7eed5` only removes an Azure-normalized duplicate route from the deployment configuration. Commits between them add tests and product documentation without changing the built runtime.
-- Deployment: Azure Static Web Apps production deployment `30e8cb0d-1380-4a3b-881d-baf4c0dab3f4`, succeeded 6 September 2026 UTC
+- Reason for separate SHAs: later commits add tests and product documentation without changing the built runtime.
+- Deployment: Azure Static Web Apps production deployment `9a04f961-7756-4be0-93eb-0af814b9878a`, succeeded 6 September 2026 UTC
 
 ## What changed
 
@@ -32,7 +32,7 @@ All seven strict-review findings are fixed. All thirteen declared public claims 
 | --- | --- |
 | F1 demo was not isolated | Fixed. A sentinel-backed browser test proves demo editing/reset never changes the real draft, and **Start for real** restores it. |
 | F2 first screen was unclear | Fixed. Fresh desktop and phone checks show the job, audience, action, and three facts before scrolling. |
-| F3 claims were undeclared | Fixed. Thirteen registry entries each map to one tagged outcome test; every declared command passes. |
+| F3 claims were undeclared | Fixed. Fourteen registry entries each map to one tagged outcome test; every declared command passes. |
 | F4 demo and 404 routing were wrong | Fixed. `/demo` returns 200 with its own title. A missing live route returns 404 with the designed page. Route navigation moves focus to the h1. |
 | F5 site structure was incomplete | Fixed. Home follows the required information order; every public page has the shared header and footer. |
 | F6 metadata was missing | Fixed. Root, demo, legal pages, and 404 carry route-appropriate metadata and product art. Sitemap includes `/demo`. |
@@ -59,9 +59,9 @@ Results:
 - Unit: 6/6 passed.
 - Typecheck and lint: passed.
 - Build: passed; `dist/index.html` exists.
-- Browser: 55 passed, 7 intentional project-specific skips across desktop and 390×844 phone projects.
+- Browser: 56 passed, 8 intentional project-specific skips across desktop and 390×844 phone projects.
 - Axe: zero serious or critical violations on `/`, `/demo`, `/privacy/`, `/terms/`, and `/404.html` in both projects.
-- Each of the thirteen commands in `.factory/claims.json` passed separately.
+- Each of the fourteen commands in `.factory/claims.json` passed separately.
 - Text resizing: the phone first screen remained readable without horizontal page overflow at 200% root text size.
 
 Production payload:
