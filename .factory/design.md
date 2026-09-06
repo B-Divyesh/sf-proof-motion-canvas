@@ -59,3 +59,9 @@ This is deliberately single-mode. A warm newsprint ground makes long editing ses
 Use case: `scientific-educational`. Subject: an overhead editorial still life of five blank index cards arranged as a logical sequence, connected by black drafting arrows and a single vermilion timing arc. World/materials: warm recycled newsprint, letterpress ink, pencil registration marks, cut paper. Light/lens: flat overcast studio light, true top-down, crisp tactile shadows. Palette words: warm paper, charcoal ink, restrained vermilion. Composition: wide 3:2 plate with generous quiet margins; no interface mockup. Negative list: no people, no hands, no readable text, no equations, no logos, no watermark, no gradients, no glossy 3D, no brand marks.
 
 Generated through the factory Azure image endpoint with `/opt/fleet/lib/gen-image.sh`, deployment `factory-image`, on 2026-08-27. Generated imagery is original for this product; prompt sidecar is stored beside the source asset. Final WebP is reviewed for stray text, symbols, seams, and palette consistency and optimized below 300 KB.
+
+The 1200×630 social preview was derived from that reviewed source on 2026-09-06 with a centered crop and indexed-color PNG export. It introduces no new generated content, marks, or text. The 180×180 touch icon is a deterministic raster export of the repository's original geometric `P` mark.
+
+## Site shell extension
+
+The repair keeps the broadsheet identity while separating the public explanation from the work surface. A slim wordmark row, large job-first headline, three plain facts, and numbered process list follow the site's shared information order. The editor remains a dense ruled sheet below it. Demo state uses a warm buff strip instead of a new accent, so its status is persistent without competing with the vermilion current-claim mark.

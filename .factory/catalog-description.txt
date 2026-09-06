@@ -1,0 +1,1 @@
+Build inspectable animated explanations with named claims, visible timing, and one-file replay exports.
