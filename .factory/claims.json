@@ -1,0 +1,93 @@
+[
+  {
+    "id": "demo-isolation",
+    "claim": "The one-click sample uses separate temporary state and never changes the real draft.",
+    "where": "Home sample action, demo banner, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:demo-isolation",
+    "sandbox": "Seed a real-data sentinel, enter /demo, edit and reset the five-step sample, then start for real and verify the sentinel is unchanged."
+  },
+  {
+    "id": "local-only",
+    "claim": "Draft content stays in the browser and is not sent away by the editor.",
+    "where": "Home facts, limits section, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-only",
+    "sandbox": "Record every request while editing, playing, and exporting the demo; assert that every request is same-origin."
+  },
+  {
+    "id": "offline-reload",
+    "claim": "The editor works offline after the first successful visit.",
+    "where": "Home facts, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "Use a fresh browser context, visit /demo, wait for service-worker control, go offline, reload, and verify the five-step sample."
+  },
+  {
+    "id": "offline-edit-export",
+    "claim": "Editing and replay export still work while offline.",
+    "where": "Offline status banner, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-edit-export",
+    "sandbox": "Use a fresh offline browser context after first load, edit the sample title, download replay HTML, and inspect its content."
+  },
+  {
+    "id": "standalone-export",
+    "claim": "Replay export creates one self-contained HTML file.",
+    "where": "Home how-it-works section, terms page, README",
+    "test": "npm run test:e2e -- --grep @claim:standalone-export",
+    "sandbox": "Export the demo, verify it has no remote script, stylesheet, or HTTP references, then open and play the file."
+  },
+  {
+    "id": "keyboard-controls",
+    "claim": "Keyboard controls move canvas items and control playback.",
+    "where": "Editor help, README",
+    "test": "npm run test:e2e -- --grep @claim:keyboard-controls",
+    "sandbox": "Focus a demo card, move it with an arrow key, then focus the canvas and start and pause playback with Space."
+  },
+  {
+    "id": "reduced-motion",
+    "claim": "The editor respects reduced-motion preferences.",
+    "where": "README",
+    "test": "npm run test:e2e -- --grep @claim:reduced-motion",
+    "sandbox": "Open /demo with reduced motion enabled and measure narrative animation and interface transition durations."
+  },
+  {
+    "id": "written-text",
+    "claim": "Written claim text stays available alongside motion.",
+    "where": "Editor, README",
+    "test": "npm run test:e2e -- --grep @claim:written-text",
+    "sandbox": "Move between sample claims and verify each visible canvas state has its written explanation in the live region."
+  },
+  {
+    "id": "mobile-layout",
+    "claim": "The editor has a usable 390-pixel mobile layout with 44-pixel controls.",
+    "where": "README",
+    "test": "npm run test:e2e -- --grep @claim:mobile-layout",
+    "sandbox": "Open /demo at 390×844, measure page overflow, internal canvas scrolling, replay visibility, and every visible link and button."
+  },
+  {
+    "id": "free-core",
+    "claim": "The complete editor and replay export are free to use.",
+    "where": "Home facts, terms page, README",
+    "test": "npm run test:e2e -- --grep @claim:free-core",
+    "sandbox": "Edit and export the demo without finding or entering any checkout, purchase, or subscription flow."
+  },
+  {
+    "id": "timed-intervals",
+    "claim": "Each claim exposes editable start and end timing that agrees with the replay export.",
+    "where": "Home how-it-works section, README",
+    "test": "npm run test:e2e -- --grep @claim:timed-intervals",
+    "sandbox": "Edit a sample interval, check the field, duration, timeline, boundary clamp, and exported value agree."
+  },
+  {
+    "id": "json-roundtrip",
+    "claim": "An editable proof can be downloaded and restored as JSON.",
+    "where": "Editor actions, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:json-roundtrip",
+    "sandbox": "Download the demo JSON, change its title, import it, and verify all five claims remain editable."
+  },
+  {
+    "id": "storage-control",
+    "claim": "Clearing this site's browser storage removes the saved draft.",
+    "where": "Privacy page",
+    "test": "npm run test:e2e -- --grep @claim:storage-control",
+    "sandbox": "Create a real draft after leaving /demo, clear local storage, reload, and verify the editor returns empty."
+  }
+]

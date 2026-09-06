@@ -1,11 +1,38 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 
+test('states the job, audience, and first action before scrolling', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('h1')).toHaveText('Build an inspectable animated explanation')
+  await expect(page.getByText(/For teachers, explainers, and programmers/)).toBeVisible()
+  const sampleAction = page.getByRole('link', { name: 'Try it with sample data' })
+  await expect(sampleAction).toBeVisible()
+  await expect(page.getByText('Free to use.')).toBeVisible()
+  await expect(page.getByText('Drafts stay in this browser.')).toBeVisible()
+  await expect(page.getByText('Works offline after the first visit.')).toBeVisible()
+  const box = await sampleAction.boundingBox()
+  expect(box).not.toBeNull()
+  expect((box?.y ?? Infinity) + (box?.height ?? 0)).toBeLessThanOrEqual(await page.evaluate(() => innerHeight))
+})
+
+test('uses real demo navigation, route metadata, focus, and browser history', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Try it with sample data' }).click()
+  await expect(page).toHaveURL(/\/demo$/)
+  await expect(page).toHaveTitle('Demo — Proof Motion Canvas')
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://proof-motion-canvas.sociobot.in/demo')
+  await expect(page.locator('#page-title')).toBeFocused()
+  await page.goBack()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.locator('h1')).toHaveText('Build an inspectable animated explanation')
+  await expect(page.locator('#page-title')).toBeFocused()
+})
+
 test('edits, plays, and exports the sample proof', async ({ page }) => {
   const errors: string[] = []
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()) })
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
+  await page.goto('/demo')
 
   await expect(page).toHaveTitle(/Proof Motion Canvas/)
   await expect(page.locator('h1')).toHaveCount(1)
@@ -42,8 +69,10 @@ test('edits, plays, and exports the sample proof', async ({ page }) => {
 test('creates a proof from the empty state', async ({ page }) => {
   await page.goto('/')
   page.on('dialog', (dialog) => dialog.accept())
-  await page.getByRole('button', { name: 'New' }).click()
-  await expect(page.getByText('Make every claim inspectable.')).toBeVisible()
+  await page.getByRole('button', { name: 'New draft' }).click()
+  await expect(page.getByText('Your canvas has no items')).toBeVisible()
+  await page.getByRole('button', { name: /Add claim/ }).click()
+  await expect(page.locator('#toast')).toContainText('Add a canvas item before adding a claim.')
   await page.getByRole('button', { name: 'Add first card' }).click()
   await page.locator('#edit-node-label').fill('Starting set')
   await page.locator('#edit-node-label').blur()
@@ -53,8 +82,20 @@ test('creates a proof from the empty state', async ({ page }) => {
   await expect(page.locator('#claim-list')).toContainText('Name the starting set')
 })
 
+test('manages keyboard focus in the arrow dialog', async ({ page }) => {
+  await page.goto('/demo')
+  const addArrow = page.getByRole('button', { name: /Arrow/ })
+  await addArrow.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('#arrow-dialog')).toBeVisible()
+  await expect(page.locator('#arrow-from')).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#arrow-dialog')).toBeHidden()
+  await expect(addArrow).toBeFocused()
+})
+
 test('keeps keyboard focus from a claim name through its accessible explanation and standalone export', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/demo')
   await page.locator('[data-select-step="s1"]').click()
 
   const title = page.locator('#edit-step-title')
@@ -81,7 +122,7 @@ test('keeps keyboard focus from a claim name through its accessible explanation 
 })
 
 test('reconciles the inspectable duration and timing fields after valid and clamped timing edits', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/demo')
   await page.locator('[data-select-step="s1"]').click()
 
   const end = page.locator('#edit-step-end')
@@ -90,7 +131,6 @@ test('reconciles the inspectable duration and timing fields after valid and clam
   await expect(end).toHaveValue('5')
   await expect(page.locator('#step-duration')).toHaveText(/Duration: 5\.00 s\./)
   await expect(page.locator('.timeline')).toContainText('1. Count both groups0.0–5.0 s')
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('proof-motion-canvas.document.v1') ?? '{}').steps[0]?.end)).toBe(5)
 
   await page.locator('[data-select-step="s1"]').click()
   await end.fill('0')
@@ -98,7 +138,6 @@ test('reconciles the inspectable duration and timing fields after valid and clam
   await expect(end).toHaveValue('0.25')
   await expect(page.locator('#step-duration')).toHaveText(/Duration: 0\.25 s\./)
   await expect(page.locator('.timeline')).toContainText('1. Count both groups0.0–0.3 s')
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('proof-motion-canvas.document.v1') ?? '{}').steps[0]?.end)).toBe(0.25)
 
   const downloadEvent = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Export replay' }).click()
@@ -109,7 +148,7 @@ test('reconciles the inspectable duration and timing fields after valid and clam
 })
 
 test('rejects malformed imports before they can corrupt the local proof', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/demo')
   const fileInput = page.locator('#file-input')
   const duplicateStepIds = {
     version: 1,
@@ -138,7 +177,7 @@ test('rejects malformed imports before they can corrupt the local proof', async 
 
 test('mobile layout contains horizontal canvas scrolling without overflowing the page', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'mobile-only assertion')
-  await page.goto('/')
+  await page.goto('/demo')
   const metrics = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: window.innerWidth, stage: document.querySelector('.stage-panel')?.scrollWidth ?? 0 }))
   expect(metrics.body).toBeLessThanOrEqual(metrics.viewport)
   expect(metrics.stage).toBeGreaterThan(metrics.viewport)
@@ -146,11 +185,24 @@ test('mobile layout contains horizontal canvas scrolling without overflowing the
 })
 
 test('keeps the editor available offline after the first visit', async ({ page, context }) => {
-  await page.goto('/')
+  await page.goto('/demo')
   await page.waitForFunction(() => navigator.serviceWorker?.controller !== null)
   await context.setOffline(true)
   await page.reload()
-  await expect(page.locator('h1')).toHaveText('Proof Motion Canvas')
+  await expect(page.locator('h1')).toHaveText('Inspect a sample animated explanation')
   await expect(page.locator('#offline-banner')).toBeVisible()
   await context.setOffline(false)
+})
+
+test('keeps every visible legal-page link at least 44 pixels high', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'touch target check uses the phone project')
+  for (const path of ['/privacy/', '/terms/', '/404.html']) {
+    await page.goto(path)
+    const undersized = await page.locator('a').evaluateAll((links) => links.filter((link) => (link as HTMLElement).offsetParent !== null).map((link) => ({
+      text: link.textContent?.trim(),
+      width: link.getBoundingClientRect().width,
+      height: link.getBoundingClientRect().height,
+    })).filter((link) => link.width < 44 || link.height < 44))
+    expect(undersized, `${path} has undersized links`).toEqual([])
+  }
 })
